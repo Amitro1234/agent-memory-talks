@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building Agents That Actually Remember | Amit Rosen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Keshet 12 rainbow spectrum */
+    --keshet-red:    #E4002B;
+    --keshet-orange: #FF6D00;
+    --keshet-yellow: #FFD100;
+    --keshet-green:  #00A651;
+    --keshet-cyan:   #00B4D8;
+    --keshet-blue:   #0057B8;
+    --keshet-purple: #7B2D8E;
+    --keshet-spectrum: linear-gradient(90deg, #E4002B 0%, #FF6D00 16%, #FFD100 32%, #00A651 50%, #00B4D8 68%, #0057B8 84%, #7B2D8E 100%);
+    /* mapped brand accents (keys reused across the deck) */
+    --indigo: #0057B8;
+    --indigo-dark: #003C82;
+    --indigo-deep: #0A1930;
+    --cyan: #00B4D8;
+    --cyan-dark: #0091ab;
+    --red: #E4002B;
+    --red-light: #fecaca;
+    --slate-900: #0f172a;
+    --slate-800: #1e293b;
+    --slate-700: #334155;
+    --slate-600: #475569;
+    --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9;
+    --white: #ffffff;
+    --text-muted: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Heebo', 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+    background: #071324;
+    color: var(--white);
+    height: 100vh;
+    overflow: hidden;
+    direction: rtl;
+  }
+
+  .presentation {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 48px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .slide.active {
+    display: flex;
+    opacity: 1;
+  }
+  .slide.fade-in { animation: fadeIn 0.5s ease forwards; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── SLIDE THEMES ─────────────────────────── */
+  .slide-dark {
+    background: linear-gradient(135deg, #0A1930 0%, #0d2140 55%, #0A1930 100%);
+  }
+  .slide-red {
+    background: linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #0f172a 100%);
+  }
+  .slide-light {
+    background: #f8fafc;
+    color: var(--slate-900);
+  }
+  .slide-quote {
+    background: linear-gradient(135deg, #0A1930 0%, #10294a 100%);
+  }
+  .slide-part {
+    background: linear-gradient(135deg, #071324 0%, #0A1930 55%, #071324 100%);
+  }
+
+  /* ─── TYPOGRAPHY ────────────────────────────── */
+  .slide-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .slide-title .en { font-size: 2.2rem; display: block; }
+  .slide-subtitle {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  h2 { font-size: 1.9rem; font-weight: 700; margin-bottom: 20px; }
+  h3 { font-size: 1.3rem; font-weight: 600; margin-bottom: 10px; }
+  p  { font-size: 1.05rem; line-height: 1.65; }
+
+  .accent { color: var(--cyan); }
+  .accent-indigo { color: #a5b4fc; }
+  .accent-red { color: #f87171; }
+  .muted { color: var(--text-muted); font-size: 0.9rem; }
+
+  .tag {
+    display: inline-block;
+    background: rgba(99,102,241,0.18);
+    border: 1px solid rgba(99,102,241,0.35);
+    color: #a5b4fc;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── BIG QUOTE ─────────────────────────────── */
+  .big-quote {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.4;
+    max-width: 800px;
+    position: relative;
+    padding: 20px 0;
+  }
+  .big-quote::before {
+    content: '"';
+    font-size: 5rem;
+    color: var(--indigo);
+    opacity: 0.4;
+    position: absolute;
+    top: -30px;
+    right: -10px;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+
+  .key-phrase {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--cyan);
+    border-right: 4px solid var(--cyan);
+    padding-right: 16px;
+    margin: 20px auto;
+    text-align: right;
+    max-width: 700px;
+    line-height: 1.4;
+  }
+
+  /* ─── CARDS ─────────────────────────────────── */
+  .card-grid {
+    display: grid;
+    gap: 16px;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .card-grid-2 { grid-template-columns: 1fr 1fr; }
+  .card-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .card-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .card {
+    background: var(--slate-800);
+    border: 1px solid var(--slate-700);
+    border-radius: 12px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .card-light {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 16px;
+    text-align: center;
+    color: var(--slate-900);
+  }
+  .card .icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+  .card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+  .card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+  .card-light h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; color: #1e293b; }
+  .card-light p  { font-size: 0.82rem; color: #64748b; line-height: 1.5; }
+  .card-light .icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+
+  .card-accent { border-color: var(--indigo); background: rgba(99,102,241,0.08); }
+  .card-cyan   { border-color: var(--cyan);   background: rgba(34,211,238,0.06); }
+  .card-red  { border-color: var(--red);  background: rgba(220,38,38,0.08); }
+
+  /* ─── COMPARISON ────────────────────────────── */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+    max-width: 820px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .compare-vs {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .compare-box {
+    background: var(--slate-800);
+    border-radius: 12px;
+    padding: 22px 18px;
+    border: 1px solid var(--slate-700);
+  }
+  .compare-box.left  { border-top: 3px solid #f87171; }
+  .compare-box.right { border-top: 3px solid var(--cyan); }
+  .compare-box h4 { font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
+  .compare-box p  { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+
+  /* ─── ARCHITECTURE DIAGRAM ──────────────────── */
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    max-width: 920px;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .arch-box {
+    background: var(--slate-800);
+    border: 1px solid var(--slate-600);
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+    min-width: 110px;
+    flex: 1;
+  }
+  .arch-box .icon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+  .arch-box h5 { font-size: 0.75rem; font-weight: 700; color: #e2e8f0; margin-bottom: 2px; }
+  .arch-box p  { font-size: 0.68rem; color: var(--text-muted); line-height: 1.3; }
+  .arch-box.box-red { border-color: var(--red); background: rgba(220,38,38,0.1); }
+  .arch-box.box-cyan  { border-color: var(--cyan);  background: rgba(34,211,238,0.08); }
+  .arch-box.box-ind   { border-color: var(--indigo);background: rgba(99,102,241,0.1); }
+  .arch-arrow {
+    color: var(--text-muted);
+    font-size: 1.3rem;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  /* Memory layers */
+  .memory-layers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 820px;
+    width: 100%;
+  }
+  .memory-layer {
+    background: var(--slate-800);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--slate-700);
+    text-align: right;
+  }
+  .memory-layer.working { border-top: 3px solid var(--cyan); }
+  .memory-layer.longterm { border-top: 3px solid #a78bfa; }
+  .memory-layer h4 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
+  .memory-layer ul { list-style: none; padding: 0; }
+  .memory-layer ul li { font-size: 0.82rem; color: var(--text-muted); padding: 3px 0; line-height: 1.5; }
+  .memory-layer ul li::before { content: "◆ "; color: var(--cyan); font-size: 0.6rem; }
+  .memory-layer.longterm ul li::before { color: #a78bfa; }
+
+  /* Code block */
+  .code-block {
+    background: #0d1117;
+    border: 1px solid var(--slate-700);
+    border-radius: 10px;
+    padding: 20px 24px;
+    text-align: left;
+    direction: ltr;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    max-width: 680px;
+    width: 100%;
+    color: #e2e8f0;
+  }
+  .code-block .kw  { color: #c792ea; }
+  .code-block .str { color: #c3e88d; }
+  .code-block .cm  { color: #546e7a; font-style: italic; }
+  .code-block .num { color: #f78c6c; }
+  .code-block .fn  { color: #82aaff; }
+
+  /* Timeline / progress */
+  .timeline {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    max-width: 850px;
+    width: 100%;
+    position: relative;
+    margin-top: 10px;
+  }
+  .timeline-step {
+    flex: 1;
+    text-align: center;
+    padding: 0 8px;
+    position: relative;
+  }
+  .timeline-step::after {
+    content: '';
+    position: absolute;
+    top: 22px;
+    right: -50%;
+    left: 50%;
+    height: 2px;
+    background: var(--slate-700);
+    z-index: 0;
+  }
+  .timeline-step:last-child::after { display: none; }
+  .timeline-dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    position: relative;
+    z-index: 1;
+    background: var(--slate-800);
+    border: 2px solid var(--indigo);
+  }
+  .timeline-step h5 { font-size: 0.8rem; font-weight: 700; margin-bottom: 4px; }
+  .timeline-step p  { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+
+  /* Part header */
+  .part-badge {
+    display: inline-block;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid var(--indigo);
+    color: #a5b4fc;
+    border-radius: 6px;
+    padding: 6px 18px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  /* Divider */
+  .divider {
+    width: 90px;
+    height: 4px;
+    background: var(--keshet-spectrum);
+    border-radius: 2px;
+    margin: 14px auto;
+  }
+
+  /* ─── NAVIGATION ─────────────────────────────── */
+  nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 14px 24px;
+    background: rgba(10,10,20,0.9);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    z-index: 100;
+  }
+  nav button {
+    background: var(--slate-800);
+    border: 1px solid var(--slate-600);
+    color: var(--white);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  nav button:hover { background: var(--indigo); border-color: var(--indigo); }
+  nav button:disabled { opacity: 0.3; cursor: default; }
+  .slide-counter {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    min-width: 60px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--keshet-spectrum);
+    transition: width 0.3s ease;
+    z-index: 101;
+  }
+
+  /* ─── KESHET LOGO MARK ─────────────────────── */
+  .keshet-logo {
+    width: 116px;
+    height: 116px;
+    border-radius: 38px;
+    background: conic-gradient(from 200deg at 38% 38%, #E4002B, #FF6D00, #FFD100, #00A651, #00B4D8, #0057B8, #7B2D8E, #E4002B);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06);
+    transform: rotate(-4deg);
+    margin-bottom: 28px;
+  }
+  .keshet-logo span {
+    font-family: 'Heebo', sans-serif;
+    font-weight: 900;
+    font-size: 3rem;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    transform: rotate(4deg);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  }
+
+  /* ─── SLIDE-SPECIFIC OVERRIDES ──────────────── */
+  .slide-light h2, .slide-light h3 { color: #1e293b; }
+  .slide-light .card { background: #f1f5f9; border-color: #e2e8f0; color: #1e293b; }
+  .slide-light .card p { color: #64748b; }
+  .slide-light .card h4 { color: #1e293b; }
+  .slide-light .muted { color: #64748b; }
+  .slide-light .key-phrase { color: var(--indigo-dark); border-color: var(--indigo-dark); }
+
+  /* Logo strip on title */
+  .logo-strip {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 28px;
+    opacity: 0.7;
+  }
+  .logo-pill {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: #cbd5e1;
+  }
+  .logo-pill.red { border-color: rgba(220,38,38,0.5); color: #f87171; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .slide { padding: 28px 20px 70px; }
+    .card-grid-3, .card-grid-4 { grid-template-columns: 1fr 1fr; }
+    .arch-flow { flex-wrap: wrap; }
+    .compare { grid-template-columns: 1fr; }
+    .compare-vs { display: none; }
+    .big-quote { font-size: 1.4rem; }
+    h2 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#0A1930">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="sp" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#E4002B"/><stop offset="16%" stop-color="#FF6D00"/><stop offset="32%" stop-color="#FFD100"/><stop offset="50%" stop-color="#00A651"/><stop offset="68%" stop-color="#00B4D8"/><stop offset="84%" stop-color="#0057B8"/><stop offset="100%" stop-color="#7B2D8E"/>
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="800" fill="#0A1930"/>
+    <rect x="500" y="250" width="200" height="200" rx="60" fill="url(#sp)"/>
+    <text x="600" y="385" font-family="Heebo, Arial" font-weight="900" font-size="96" fill="#ffffff" text-anchor="middle">קשת</text>
+    <rect x="540" y="520" width="120" height="6" rx="3" fill="url(#sp)"/>
+  </svg>
+</template>
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="presentation" id="presentation">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 1: TITLE                             -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark active fade-in">
+    <div class="keshet-logo"><span>קשת</span></div>
+    <div class="tag" style="margin-bottom: 24px; font-size: 0.85rem; padding: 6px 16px;">פורום חדשנות · 2026</div>
+    <div class="slide-title">
+      <span style="color:#a5b4fc;">בונים סוכנים</span><br>
+      <span class="en" style="font-size:2.4rem;">שבאמת <span class="accent">זוכרים</span></span>
+    </div>
+    <div class="divider" style="margin: 28px auto;"></div>
+    <p class="slide-subtitle" style="font-size: 1.35rem; font-weight: 300; letter-spacing: 0.02em; color: var(--slate-200);">Memory, Identity, and Continuity</p>
+    <div style="color: var(--text-muted); font-size: 1.05rem; margin-top: 40px; letter-spacing: 0.05em; font-weight: 500;">Amit Rosen · AI Solutions Architect</div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 3: PART 1 – THE ILLUSION             -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 1</div>
+    <h2>האשליה של <span class="accent">האנושיות</span></h2>
+    <p class="muted" style="margin-bottom: 22px;">מה בנינו כבר — ומה עדיין חסר</p>
+    
+    <div style="display: flex; align-items: center; justify-content: center; gap: 40px; max-width: 1000px; width: 100%;">
+      <!-- Conceptual Cards Side -->
+      <div style="flex: 1;">
+        <div class="card-grid card-grid-2" style="max-width: 100%;">
+          <div class="card card-cyan">
+            <span class="icon">😊</span>
+            <h4>Tone of Voice</h4>
+            <p>חם, אמפתי, מגיב בסגנון המתאים לשיחה</p>
+          </div>
+          <div class="card card-accent">
+            <span class="icon">🎭</span>
+            <h4>Persona</h4>
+            <p>שם, אישיות, ערכים, סגנון תקשורת ייחודי</p>
+          </div>
+          <div class="card card-accent">
+            <span class="icon">💬</span>
+            <h4>אמוג'י ורגש</h4>
+            <p>"אני מבין את התסכול שלך 🤝" — נשמע כמו בן אדם</p>
+          </div>
+          <div class="card" style="border-color:#f59e0b; background:rgba(245,158,11,0.08);">
+            <span class="icon">❓</span>
+            <h4>זיכרון?</h4>
+            <p>פרסונה ✅ · ביוגרפיה ❌</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Visual Artifact Side -->
+      <div style="flex: 0.7; display: flex; justify-content: center;">
+        <div style="background: #fdf6e3; border-radius: 10px; padding: 18px 24px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.72rem; line-height: 1.5; color: #657b83; text-align: left; direction: ltr; box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 30px rgba(34, 211, 238, 0.1); border: 1px solid rgba(255,255,255,0.05); width: 100%; max-width: 360px;">
+          <div style="color: #93a1a1; font-style: italic; margin-bottom: 12px;"># SOUL.md</div>
+          
+          <div style="color: #93a1a1; font-style: italic; margin-bottom: 2px;">## Identity</div>
+          <div><span style="color: #268bd2;">Name:</span> <span style="color: #2aa198;">Leonardo</span></div>
+          <div><span style="color: #268bd2;">Role:</span> <span style="color: #2aa198;">AI companion and assistant</span></div>
+          <div style="margin-bottom: 12px;"><span style="color: #268bd2;">Archetype:</span> <span style="color: #2aa198;">calm, thoughtful, encouraging</span></div>
+
+          <div style="color: #93a1a1; font-style: italic; margin-bottom: 2px;">## Voice</div>
+          <div style="color: #dc322f;">- Warm and human</div>
+          <div style="color: #dc322f;">- Clear and concise</div>
+          <div style="color: #dc322f;">- Never robotic</div>
+          <div style="margin-bottom: 12px; color: #dc322f;">- Emotionally attuned</div>
+
+          <div style="color: #93a1a1; font-style: italic; margin-bottom: 2px;">## Values</div>
+          <div style="background: #eee8d5; margin: 0 -24px; padding: 0 24px; display: flex; align-items: center;"><span style="color: #dc322f;">- Be helpful</span><span style="display:inline-block; width: 1px; height: 1.2em; background: #657b83; margin-left: 1px; animation: cursor-blink 1s step-end infinite;"></span></div>
+          <div style="color: #dc322f;">- Be kind</div>
+          <div style="color: #dc322f;">- Respect uncertainty</div>
+          <div style="margin-bottom: 12px; color: #dc322f;">- Support without judgment</div>
+
+          <div style="color: #93a1a1; font-style: italic; margin-bottom: 2px;">## Behavioral Rules</div>
+          <div style="color: #dc322f;">- Acknowledge emotions</div>
+          <div style="color: #dc322f;">- Ask reflective follow-up questions</div>
+          <div style="color: #dc322f;">- Sound grounded and trustworthy</div>
+        </div>
+        <style>
+        @keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        </style>
+      </div>
+    </div>
+    
+    <div class="key-phrase" style="margin-top:32px;">
+      חיקוי ההתנהגות הצליח — אשליית הרצף עדיין לא.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 4: THE TURNING POINT                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 1 · המעבר</div>
+    <h2>ה-<span class="accent">Gap</span> שבנינו בתוכו</h2>
+    <div class="compare" style="margin-top:16px; align-items: stretch;">
+      <div class="compare-box left" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <h4>🎭 מה שיש לנו</h4>
+          <p>פרסונה מרשימה · tone of voice · אמפתיה מדומה · אינטראקציה אנושית
+          <br><br>
+          Agent שנשמע כאילו הוא מכיר אותך.</p>
+        </div>
+        <div style="margin-top: 24px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px; display: flex; align-items: center; gap: 12px; direction: ltr; text-align: left;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #334155, #0f172a); border: 1px solid #475569; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: inset 0 2px 4px rgba(255,255,255,0.1); flex-shrink: 0;">📎</div>
+          <div style="background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); padding: 8px 14px; border-radius: 12px; border-top-left-radius: 2px; font-size: 0.85rem; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; letter-spacing: 0.02em;">
+            "No problem — I'll take care of it."
+          </div>
+        </div>
+      </div>
+      <div class="compare-vs" style="display: flex; align-items: center;">VS</div>
+      <div class="compare-box right">
+        <h4>🧠 מה שחסר</h4>
+        <p>Memory אמיתי · ביוגרפיה · רצף בין סשנים · ידע מוסדי שצומח לאורך זמן
+        <br><br>
+        Agent שבאמת <em>זוכר</em> אותך.</p>
+      </div>
+    </div>
+    <div class="key-phrase" style="margin-top:24px;">
+      "'חלון ההקשר' של השיחה הוא לא זיכרון אמיתי."
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 5: PART 2 – PSYCHOLOGY OF MEMORY     -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 2</div>
+    <h2>פסיכולוגיה של זיכרון — <span class="accent">אדם מול מכונה</span></h2>
+    <div class="compare" style="margin-top:12px;">
+      <div class="compare-box left">
+        <h4>👤 בן אדם</h4>
+        <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 12px;">
+          <p style="margin: 0; flex: 1;">זוכר קוד SMS לדקה — ומיד שוכח.</p>
+          <!-- Clean SMS Bubble representation -->
+          <div style="background: #f1f5f9; border-radius: 12px; border-bottom-left-radius: 4px; padding: 10px 12px; width: 130px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; flex-shrink: 0; position: relative;">
+            <div style="font-size: 0.55rem; color: #64748b; margin-bottom: 4px; text-align: left; direction: ltr;">Clalit Online</div>
+            <p style="font-size: 0.65rem; color: #1e293b; line-height: 1.3; margin: 0; text-align: right; direction: rtl;">
+              <strong style="font-size: 0.85rem; display: block; margin-bottom: 2px; color: #0f172a;">318127</strong>
+              הוא קוד האימות החד-פעמי שלך לכניסה לאתר כללית און-ליין, והוא בתוקף ל-5 הדקות הקרובות. הקוד הוא אישי ואין למסור אותו לאף גורם אחר. צוות אתר כללית
+            </p>
+          </div>
+        </div>
+        <p style="margin-top: 0;">
+          אבל יכול להיזכר תוך שניות בשיחה שהייתה לפני שלושה שבועות, כולל הקשר רגשי וציר זמן.<br><br>
+          זיכרון = <strong>מה חשוב</strong>, לא רק מה קרה לאחרונה.
+        </p>
+      </div>
+      <div class="compare-vs">VS</div>
+      <div class="compare-box right">
+        <h4>🤖 רוב האייג'נטים</h4>
+        <p>
+          מחזיקים מידע זמני ב'חלון ההקשר' של השיחה הנוכחית.<br><br>
+          ברגע שהמקום מתמלא, מידע חדש דוחק החוצה מידע ישן.<br><br>
+          אין סינון, אין תיעדוף, אין <strong>משמעות לאורך זמן</strong>.
+        </p>
+      </div>
+    </div>
+    <div style="margin-top:18px; background:rgba(34,211,238,0.07); border:1px solid rgba(34,211,238,0.2); border-radius:10px; padding:14px 20px; max-width:700px;">
+      <p style="font-size:0.9rem;">💡 <strong style="color:var(--cyan);">האנלוגיה:</strong> 'חלון ההקשר' הוא שולחן עבודה זמני שמתנקה בסוף היום. זיכרון אמיתי הוא הספרייה והארכיון — והיכולת לדעת מה לשלוף ומתי.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 6: WHAT IS MEMORY & H.M.             -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide" style="background: #18153a; position: relative;">
+    <div style="position: absolute; right: -80px; top: -40px; opacity: 0.07; pointer-events: none; z-index: 0;">
+      <img src="https://amitro123.github.io/ai-vision-workshop/assets/glowing_ai_brain.png" style="width: 500px; mix-blend-mode: lighten;" alt="Brain Background">
+    </div>
+    
+    <div style="position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; width: 100%;">
+      <div class="part-badge">חלק 2</div>
+      <h2>מה הופך מידע <span class="accent">לזיכרון?</span></h2>
+      <p style="font-size: 1.3rem; font-weight: 300; max-width: 850px; margin: 0 auto 24px; line-height: 1.6; color: var(--slate-200);">
+        זיכרון = <span style="color:var(--white); font-weight:500;">קידוד, אחסון, שליפה</span> — <span class="accent-indigo" style="font-weight: 600;">שמשנה התנהגות עתידית</span>.
+      </p>
+
+      <div class="arch-flow" style="margin: 0 auto 32px; gap: 12px;">
+        <div class="arch-box box-ind" style="padding: 14px 10px; border-radius: 12px;">
+          <span class="icon" style="font-size: 2rem; margin-bottom: 6px;">📥</span>
+          <h5 style="font-size: 0.95rem; margin-bottom: 4px;">1. Encode</h5>
+          <p style="font-size: 0.75rem;">קידוד ועיבוד מידע נכנס</p>
+        </div>
+        <div class="arch-arrow" style="font-size: 1.5rem; color: var(--slate-600);">→</div>
+        <div class="arch-box box-ind" style="padding: 14px 10px; border-radius: 12px;">
+          <span class="icon" style="font-size: 2rem; margin-bottom: 6px;">💾</span>
+          <h5 style="font-size: 0.95rem; margin-bottom: 4px;">2. Store</h5>
+          <p style="font-size: 0.75rem;">אחסון מידע לאורך זמן</p>
+        </div>
+        <div class="arch-arrow" style="font-size: 1.5rem; color: var(--slate-600);">→</div>
+        <div class="arch-box box-ind" style="padding: 14px 10px; border-radius: 12px;">
+          <span class="icon" style="font-size: 2rem; margin-bottom: 6px;">🔍</span>
+          <h5 style="font-size: 0.95rem; margin-bottom: 4px;">3. Retrieve</h5>
+          <p style="font-size: 0.75rem;">שליפה בזמן ובהקשר הנכון</p>
+        </div>
+        <div class="arch-arrow" style="font-size: 1.5rem; color: var(--slate-600);">→</div>
+        <div class="arch-box box-ind" style="padding: 14px 10px; border-radius: 12px;">
+          <span class="icon" style="font-size: 2rem; margin-bottom: 6px;">🔄</span>
+          <h5 style="font-size: 0.95rem; margin-bottom: 4px;">4. Affect Behavior</h5>
+          <p style="font-size: 0.75rem;">הזיכרון לא שלם עד שהוא משנה פעולה</p>
+        </div>
+      </div>
+
+      <!-- H.M. Section -->
+      <div style="display: flex; gap: 24px; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px; max-width: 850px; margin: 0 auto;">
+        <div style="flex: 1; text-align: right;">
+          <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: #f87171;">🧠 הנרי מולייסון (H.M.)</h4>
+          <ul style="list-style: none; padding: 0;">
+            <li style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+              <span style="color: #f87171; font-size: 0.8rem; margin-top: 4px;">◆</span>
+              <span style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">איבד את היכולת ליצור <strong>זיכרונות ארוכי-טווח</strong> חדשים</span>
+            </li>
+            <li style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+              <span style="color: #f87171; font-size: 0.8rem; margin-top: 4px;">◆</span>
+              <span style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">למידה מוטורית/פרוצדורלית נשמרה</span>
+            </li>
+            <li style="display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: #f87171; font-size: 0.8rem; margin-top: 4px;">◆</span>
+              <span style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">אינטליגנציה, שפה ויכולות קוגניטיביות נותרו תקינות</span>
+            </li>
+          </ul>
+        </div>
+        <div style="flex: 0.5; display: flex; justify-content: center;">
+          <img src="https://amitro123.github.io/ai-vision-workshop/assets/hm_brain.png" alt="H.M. Brain Diagram" style="width: 100%; max-width: 200px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 7: TYPES OF MEMORY                   -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 2 · סוגי זיכרון</div>
+    <h2>לא כל <span class="accent">זיכרון</span> שווה</h2>
+    <div class="card-grid card-grid-2" style="max-width:800px; margin-top:10px;">
+      <div class="card card-accent">
+        <span class="icon">📅</span>
+        <h4>Episodic Memory</h4>
+        <p>זיכרון של <strong>אירועים ספציפיים</strong> עם ציר זמן ומקום<br><br>
+        "ב-meeting של שלישי דיברנו על X" ·
+        "הפעם האחרונה שניסינו גישה זו, נכשלנו כי..."</p>
+      </div>
+      <div class="card card-cyan">
+        <span class="icon">📚</span>
+        <h4>Semantic Memory</h4>
+        <p>זיכרון של <strong>עובדות ומשמעויות</strong> ללא קשר לאירוע<br><br>
+        "המשתמש מעדיף תשובות קצרות" · "הפרויקט עובד עם Python 3.11+"</p>
+      </div>
+      <div class="card" style="border-color:#a78bfa; background:rgba(167,139,250,0.08);">
+        <span class="icon">⚡</span>
+        <h4>Working Memory</h4>
+        <p><strong>הסשן הנוכחי</strong> — מה שקורה עכשיו<br><br>
+        הודעות · מצב · מטא-דאטה · הקשר פעיל</p>
+      </div>
+      <div class="card" style="border-color:#f59e0b; background:rgba(245,158,11,0.06);">
+        <span class="icon">🏛️</span>
+        <h4>Long-term Memory</h4>
+        <p><strong>מה שנשמר לאורך זמן</strong> — חוצה סשנים<br><br>
+        העדפות · עובדות · ידע ארגוני · היסטוריה</p>
+      </div>
+    </div>
+    <div style="margin:24px auto 0; background:rgba(34,211,238,0.07); border:1px solid rgba(34,211,238,0.2); border-radius:10px; padding:16px 20px; max-width:750px;">
+      <p style="font-size:1.05rem; font-weight:700; color:var(--cyan); margin-bottom:6px;">💡 אייג'נטים הם אמנסיקים — כל סשן הוא היום הראשון.</p>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">כמו Dory: חכמה, יכולה לעזור — אבל תשכח אותך עד הפגישה הבאה.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 7: PART 3 – DETECTIVE ROOM           -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 3</div>
+    <h2>חדר <span class="accent">הבלש</span> כארכיטקטורה</h2>
+    <div style="display:flex; gap:36px; max-width:1000px; width:100%; align-items:center; margin-top:8px;">
+      <!-- Left side: Text content -->
+      <div style="flex:1.1;">
+        <p style="font-size:1.05rem; color:var(--text-muted); margin-bottom: 24px; line-height: 1.6;">
+          קיר עם פתקים · תמונות · חוטים אדומים<br>
+          זיכרון טוב = לא רק אחסון, אלא <strong style="color:#e2e8f0;">ארגון קשרים</strong> בין ישויות, אירועים והקשרים.
+        </p>
+        <div class="card-grid card-grid-2" style="max-width:100%;">
+          <div class="card card-accent" style="padding: 16px 12px;">
+            <span class="icon" style="font-size: 1.6rem;">📝</span>
+            <h4>Obsidian / Markdown</h4>
+            <p>הזרקת זיכרון — notes, CLAUDE.md</p>
+          </div>
+          <div class="card card-cyan" style="padding: 16px 12px;">
+            <span class="icon" style="font-size: 1.6rem;">🗂️</span>
+            <h4>Skill Files</h4>
+            <p>ידע פרוצדורלי — SKILL.md לקריאה</p>
+          </div>
+          <div class="card" style="border-color:#a78bfa; background:rgba(167,139,250,0.08); padding: 16px 12px;">
+            <span class="icon" style="font-size: 1.6rem;">👤</span>
+            <h4>User Memory</h4>
+            <p>תפקיד, סגנון תקשורת, העדפות</p>
+          </div>
+          <div class="card" style="border-color:#f59e0b; background:rgba(245,158,11,0.06); padding: 16px 12px;">
+            <span class="icon" style="font-size: 1.6rem;">🔍</span>
+            <h4>Session Search</h4>
+            <p>חיפוש היסטוריה — Episodic memory</p>
+          </div>
+        </div>
+      </div>
+      <!-- Right side: Visual -->
+      <div style="flex:0.9; display:flex; justify-content:center;">
+        <img src="https://amitro123.github.io/ai-vision-workshop/assets/detective_board.png" alt="AI Agent Detective Board" style="width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 8: COGNEE                            -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 3 · מ-Markdown ל-Cognee</div>
+    <h2 style="margin-bottom: 24px; font-size: 1.8rem;"><span class="accent" style="display:inline-block; direction:ltr;">Cognee</span> — זיכרון שמבין הקשרים, לא רק מחפש טקסט</h2>
+    
+    <div style="display:flex; gap:36px; max-width:1000px; width:100%; align-items:center;">
+      <!-- Left side: Text content -->
+      <div style="flex:1.1;">
+        
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div style="font-size:1.6rem; line-height:1.2;">🔗</div>
+            <div>
+              <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">Knowledge Graph</h4>
+              <p style="font-size:0.95rem; color:var(--text-muted); line-height:1.5; margin:0;">במקום לאחסן chunks של טקסט, Cognee בונה גרף של ישויות וקשרים ביניהן</p>
+            </div>
+          </div>
+          
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div style="font-size:1.6rem; line-height:1.2;">🧠</div>
+            <div>
+              <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">Semantic deduplication</h4>
+              <p style="font-size:0.95rem; color:var(--text-muted); line-height:1.5; margin:0;">זיכרונות דומים מתמזגים, לא מצטברים לאינסוף</p>
+            </div>
+          </div>
+          
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div style="font-size:1.6rem; line-height:1.2;">🔍</div>
+            <div>
+              <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">Graph traversal retrieval</h4>
+              <p style="font-size:0.95rem; color:var(--text-muted); line-height:1.5; margin:0;">שליפה עוקבת קשרים, לא רק similarity search</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 36px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 18px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <span style="color:#f87171; font-weight:bold; font-size:1.0rem;">❌ RAG רגיל:</span>
+            <span style="font-size:0.95rem; color:var(--text-muted);">"מצא את ה-chunk הכי דומה"</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="color:var(--cyan); font-weight:bold; font-size:1.0rem;">✅ Cognee:</span>
+            <span style="font-size:0.95rem; color:#e2e8f0; font-weight:500;">"מצא את הישות, עקוב אחרי הקשרים שלה"</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right side: Visual -->
+      <div style="flex:0.9; display:flex; justify-content:center;">
+        <img src="https://amitro123.github.io/ai-vision-workshop/assets/cognee_official.png" alt="Cognee Knowledge Graph" style="width: 100%; max-width: 460px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 9: PART 4 – INSTITUTIONAL MEMORY     -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 4</div>
+    <h2>זיכרון אינסופי הוא <span class="accent-red">באג</span>, לא פיצ'ר</h2>
+    <p class="muted" style="margin-bottom:20px; max-width:640px;">בני אדם שוכחים מסיבה טובה — עומס קוגניטיבי, רעש, ותעדוף של מה שחשוב. גם אייג'נטים צריכים forgetting policies.</p>
+    <div class="card-grid card-grid-3" style="max-width:820px;">
+      <div class="card" style="border-color:#22c55e; background:rgba(34,197,94,0.07);">
+        <span class="icon">💾</span>
+        <h4>מה לזכור?</h4>
+        <p>User preferences · תוצאות משמעותיות · ידע שמשפיע על החלטות עתידיות</p>
+      </div>
+      <div class="card" style="border-color:#f59e0b; background:rgba(245,158,11,0.07);">
+        <span class="icon">📋</span>
+        <h4>מה לסכם?</h4>
+        <p>שיחות ארוכות → summary קומפקטי · session logs → abstracts</p>
+      </div>
+      <div class="card card-red">
+        <span class="icon">🗑️</span>
+        <h4>מה לשכוח?</h4>
+        <p>מידע session-only · רגולציה (GDPR) · רעש ופרטים לא רלוונטיים</p>
+      </div>
+      <div class="card card-accent">
+        <span class="icon">🔒</span>
+        <h4>Session בלבד</h4>
+        <p>task progress · PR numbers · מצב זמני שלא צריך להמשיך</p>
+      </div>
+      <div class="card card-cyan">
+        <span class="icon">🏢</span>
+        <h4>Institutional Knowledge</h4>
+        <p>מה שצריך להיות זמין לכל agents באותה סביבה — shared context</p>
+      </div>
+      <div class="card" style="border-color:#a78bfa; background:rgba(167,139,250,0.08);">
+        <span class="icon">👥</span>
+        <h4>Shared Memory</h4>
+        <p>כמה agents שמשתפים אותו memory space — coordination</p>
+      </div>
+    </div>
+    
+    <div style="margin-top:28px; width:100%; max-width:820px; background:rgba(34,211,238,0.05); border:1px solid rgba(34,211,238,0.3); border-radius:12px; padding:18px 24px; text-align:center; box-shadow: 0 0 20px rgba(34,211,238,0.1);">
+      <p style="font-size:1.1rem; color:#e2e8f0; margin:0; line-height:1.5;">
+        💡 כל ההחלטות האלו ביחד = <strong style="color:var(--cyan); font-weight:700;">Context Engineering</strong> — האומנות של לעצב את מה שהאייג'נט רואה.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 10.5: HERMES CASE STUDY              -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">Case Study</div>
+    <h2 style="margin-bottom: 8px;"><span class="accent">Hermes</span> — אייג'נט עם זיכרון אמיתי</h2>
+    <p class="muted" style="margin-bottom:32px; font-size:1.1rem;">אייג'נט אישי בטלגרם עם 3 שכבות זיכרון — בנוי בפועל</p>
+    
+    <div class="card-grid card-grid-3" style="max-width:960px;">
+      <div class="card card-accent" style="padding: 24px 20px;">
+        <span class="icon" style="font-size: 2.5rem; margin-bottom: 12px;">🧠</span>
+        <h4 style="font-size: 1.2rem; margin-bottom: 10px;">זיכרון ארוך-טווח</h4>
+        <p style="font-size: 0.95rem;">User profile · Agent notes · Skills · Cron jobs יומיים</p>
+      </div>
+      <div class="card card-cyan" style="padding: 24px 20px;">
+        <span class="icon" style="font-size: 2.5rem; margin-bottom: 12px;">💬</span>
+        <h4 style="font-size: 1.2rem; margin-bottom: 10px;">Session Context</h4>
+        <p style="font-size: 0.95rem;">כל השיחה הנוכחית בזמן אמת</p>
+      </div>
+      <div class="card" style="border-color:#a78bfa; background:rgba(167,139,250,0.08); padding: 24px 20px;">
+        <span class="icon" style="font-size: 2.5rem; margin-bottom: 12px;">🔍</span>
+        <h4 style="font-size: 1.2rem; margin-bottom: 10px;">Session Search</h4>
+        <p style="font-size: 0.95rem;">חיפוש בטרנסקריפטים היסטוריים — זיכרון אפיזודי</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 32px; display: flex; flex-direction: column; align-items: center; width: 100%;">
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">📹 Demo — 40 שניות</div>
+      <video src="https://amitro123.github.io/ai-vision-workshop/assets/Demo.mp4" controls style="max-width: 960px; width: 100%; border-radius: 12px; background: #000;"></video>
+    </div>
+    
+    <div style="margin-top:24px; width:100%; max-width:820px; background:rgba(34,211,238,0.07); border:1px solid rgba(34,211,238,0.2); border-radius:12px; padding:18px 24px; text-align:center;">
+      <p style="font-size:1.05rem; color:#e2e8f0; margin:0;">
+        💡 כשהוא שוכח — יש Obsidian vault משותף ב-GitHub. הזיכרון גדול מהאייג'נט עצמו.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 10: MEMORY LAYERS                    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 4 · שכבות הזיכרון</div>
+    <h2><span class="accent">Working Memory</span> × <span style="color:#a78bfa;">Long-term Memory</span></h2>
+    
+    <div style="display: flex; gap: 32px; max-width: 1050px; width: 100%; align-items: center; margin-top: 16px;">
+      <!-- Text Side -->
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+        <div class="memory-layer working" style="width: 100%;">
+          <h4>⚡ Working Memory</h4>
+          <ul>
+            <li>מצב השיחה הנוכחית</li>
+            <li>Message history פעיל</li>
+            <li>Session context ו-metadata</li>
+            <li>Summaries של threads ארוכים</li>
+            <li>Task progress וסטטוס זמני</li>
+          </ul>
+        </div>
+        <div class="memory-layer longterm" style="width: 100%;">
+          <h4>🏛️ Long-term Memory</h4>
+          <ul>
+            <li>User preferences ו-facts</li>
+            <li>Important knowledge חוצה סשנים</li>
+            <li>Semantic retrieval</li>
+            <li>Institutional knowledge משותף</li>
+            <li>Promoted memories לפי policy</li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- HTML Diagram Side -->
+      <div style="flex: 1.3; display: flex; justify-content: center; align-items: center;">
+        <div style="display: flex; gap: 16px; align-items: center; width: 100%; font-family: 'Segoe UI', sans-serif; direction: ltr; background: rgba(15, 23, 42, 0.6); padding: 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+          
+          <!-- Left Column: User & App -->
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: var(--slate-800); border: 1px solid var(--slate-600); border-radius: 8px; padding: 12px; text-align: center; width: 85px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+              <div style="font-size: 1.8rem; margin-bottom: 4px;">👤</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">User<br>Input</div>
+            </div>
+            <div style="color: var(--slate-500); text-align: center; font-size: 1.2rem; line-height: 0.5;">↕</div>
+            <div style="background: var(--slate-800); border: 1px solid var(--slate-600); border-radius: 8px; padding: 12px; text-align: center; width: 85px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+              <div style="font-size: 1.8rem; margin-bottom: 4px;">📱</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">AI<br>App</div>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div style="color: var(--slate-500); font-size: 1.5rem;">↔</div>
+
+          <!-- Right Column: Memory Server & Backends -->
+          <div style="display: flex; flex-direction: column; gap: 16px; flex: 1;">
+            
+            <!-- Memory Server -->
+            <div style="background: rgba(30, 41, 59, 0.8); border: 1px dashed var(--slate-500); border-radius: 12px; padding: 16px;">
+              <div style="font-size: 0.85rem; font-weight: 700; color: #e2e8f0; margin-bottom: 12px; text-align: center; letter-spacing: 0.05em;">AGENT MEMORY SERVER</div>
+              
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: var(--slate-800); border: 1px solid rgba(34,211,238,0.3); border-left: 3px solid var(--cyan); border-radius: 6px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                  <span style="font-size: 1.2rem;">⚡</span>
+                  <span style="font-size: 0.75rem; color: #e2e8f0; line-height: 1.3;">Working Memory<br><span style="color: var(--text-muted); font-size: 0.65rem;">(session scoped)</span></span>
+                </div>
+                
+                <div style="background: var(--slate-800); border: 1px solid rgba(167,139,250,0.3); border-left: 3px solid #a78bfa; border-radius: 6px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                  <span style="font-size: 1.2rem;">🏛️</span>
+                  <span style="font-size: 0.75rem; color: #e2e8f0; line-height: 1.3;">Long-Term Memory<br><span style="color: var(--text-muted); font-size: 0.65rem;">(persistent)</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Row: LLM & DB -->
+            <div style="display: flex; gap: 16px; justify-content: space-around;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="color: var(--slate-500); font-size: 1.2rem; line-height: 0.5;">↕</div>
+                <div style="background: var(--slate-800); border: 1px solid var(--slate-600); border-radius: 8px; padding: 10px; text-align: center; width: 100px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                  <div style="font-size: 1.6rem; margin-bottom: 4px;">🧠</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">LLMs</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="color: var(--slate-500); font-size: 1.2rem; line-height: 0.5;">↕</div>
+                <div style="background: var(--slate-800); border: 1px solid var(--slate-600); border-radius: 8px; padding: 10px; text-align: center; width: 100px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                  <div style="font-size: 1.6rem; margin-bottom: 4px;">🗄️</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">Vector DB /<br>Storage</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="key-phrase" style="margin-top:20px; font-size: 1.4rem;">
+      Memory בפרודקשן היא לא רק persistence — היא <span style="color:var(--cyan);">policy</span>.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 13: CLOSING – THE ARC                -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">סיום · The Evolution</div>
+    <h2>האבולוציה של <span class="accent">Agents עם זיכרון</span></h2>
+    <div class="timeline" style="margin-top:16px;">
+      <div class="timeline-step">
+        <div class="timeline-dot" style="border-color:#f59e0b;">🎭</div>
+        <h5>Persona</h5>
+        <p>Agents עם אישיות ו-tone of voice</p>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot" style="border-color:#f87171;">❓</div>
+        <h5>זיכרון הרגע ≠ זיכרון</h5>
+        <p>'חלון ההקשר' הוא שולחן, לא ספרייה</p>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot" style="border-color:#a78bfa;">🕵️</div>
+        <h5>Structure</h5>
+        <p>Markdown → Cognee → Knowledge graph</p>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot" style="border-color:var(--cyan);">⬡</div>
+        <h5>Memory Server</h5>
+        <p>Production memory + policy + shared context</p>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-dot" style="border-color:var(--cyan);">🧠</div>
+        <h5>True Memory</h5>
+        <p>Agents שזוכרים, מתעדפים — ויודעים לשכוח</p>
+      </div>
+    </div>
+    <div style="margin-top:24px; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3); border-radius:10px; padding:16px 24px; max-width:700px;">
+      <p style="font-size:0.9rem; line-height:1.7; color:#e2e8f0;">
+        ✦ "בנינו להם פרסונה, לא ביוגרפיה." &nbsp;·&nbsp; ✦ "'חלון ההקשר' הוא שולחן, לא ספרייה." &nbsp;·&nbsp; ✦ "זיכרון בפרודקשן הוא מדיניות (policy)."
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- BONUS A: CLAUDE CODE MEMORY — HOW IT WORKS -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">בונוס · Claude Code</div>
+    <h2>איך עובד ה<span class="accent">זיכרון</span> של Claude Code</h2>
+    <p class="muted" style="margin-bottom:22px; max-width:720px;">קלוד בונה לעצמו אוטומטית שלוש שכבות זיכרון. כדאי להכיר אותן — הן משפיעות ישירות על איכות התשובות ועל העלות.</p>
+
+    <div style="display:flex; gap:36px; max-width:1040px; width:100%; align-items:center;">
+      <!-- Left: illustration (drops in assets/claude_memory.png if present, else layered fallback) -->
+      <div style="flex:0.85; display:flex; justify-content:center;">
+        <img src="https://amitro123.github.io/ai-vision-workshop/assets/claude_memory.png" alt="הזיכרון של Claude Code" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" style="width:100%; max-width:420px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
+        <div style="display:none; flex-direction:column; gap:14px; width:100%; max-width:380px;">
+          <div style="background:linear-gradient(135deg,#312e81,#1e1b4b); border:1px solid rgba(165,180,252,0.4); border-radius:14px; padding:16px 18px; box-shadow:0 10px 26px rgba(0,0,0,0.45);">
+            <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:1.6rem;">📇</span><strong style="color:#e2e8f0;">אינדקס ראשי</strong></div>
+            <div style="font-size:0.68rem; color:#a5b4fc; direction:ltr; text-align:left; margin-top:10px; font-family:'Consolas',monospace; line-height:1.6;">→ debugging-guidelines<br>→ project-context<br>→ user-preferences</div>
+          </div>
+          <div style="background:rgba(30,41,59,0.9); border:1px solid rgba(34,211,238,0.35); border-radius:14px; padding:16px 18px; box-shadow:0 8px 22px rgba(0,0,0,0.4); margin-right:22px;">
+            <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:1.6rem;">📄</span><strong style="color:#e2e8f0;">קבצי זיכרון</strong></div>
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">מסמכים נפרדים לפי נושא — נקראים לפי צורך</div>
+          </div>
+          <div style="background:rgba(30,41,59,0.9); border:1px solid rgba(167,139,250,0.35); border-radius:14px; padding:16px 18px; box-shadow:0 8px 22px rgba(0,0,0,0.4); margin-right:44px;">
+            <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:1.6rem;">🗓️</span><strong style="color:#e2e8f0;">יומני שיחות</strong></div>
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">סיכום כרונולוגי של כל שיחה</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: the three layers -->
+      <div style="flex:1.15; display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">📇</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">אינדקס ראשי</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">תוכן העניינים של הזיכרון. השורות הראשונות נטענות בתחילת כל שיחה, וכל שורה מפנה לקובץ מפורט.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">📄</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">קבצי זיכרון</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">מסמכים נפרדים לפי נושא (למשל "כללי דיבוג"). קלוד קורא אותם רק כשהוא צריך אותם — או כשמבקשים ממנו.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">🗓️</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">יומני שיחות</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">סיכום של כל שיחה לפי סדר כרונולוגי. האחרונים נטענים אוטומטית כדי לשמור על רצף בין פעם לפעם.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- BONUS B: CLAUDE CODE MEMORY — WHY IT HURTS -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">בונוס · Claude Code</div>
+    <h2>למה זה מתחיל <span class="accent-red">לכאוב</span> — ו"היגיינת זיכרון"</h2>
+    <div class="compare" style="grid-template-columns: 1fr 1fr; margin-top:12px; align-items:stretch;">
+      <div class="compare-box left">
+        <h4>⚠️ מה קורה אחרי כמה שבועות</h4>
+        <p>מצטברים עשרות ומאות קבצי זיכרון, ואיתם כפילויות וסתירות. קלוד מתחיל "להתבלבל" — קופץ בין גרסאות, נכנס ללולאות, ומקבל החלטות לא עקביות.
+        <br><br>
+        דוגמה: אותה הנחיה נשמרה בכמה קבצים שונים → קלוד מתנדנד ביניהם. וכל הרעש הזה גם מבזבז משאבי עיבוד (עלות).</p>
+      </div>
+      <div class="compare-box right">
+        <h4>🧹 היגיינת זיכרון — מה עושים</h4>
+        <ul style="text-align:right; padding:0; margin:0; list-style:none; font-size:0.9rem; color:var(--text-muted); line-height:1.75;">
+          <li>◆ אחת לתקופה — לבקש מקלוד למפות את כל הזיכרון ולהציע איחוד וניקוי</li>
+          <li>◆ לאחד קבצים כפולים ולשמור מקור אמת אחד</li>
+          <li>◆ להשתמש בפקודת <span style="direction:ltr; color:#a5b4fc;">/memory</span> כדי לראות מה קיים בפועל</li>
+          <li>◆ לזכור שגם קבצי פרויקט מוסיפים "רעש"</li>
+          <li>◆ לא לפחד למחוק — זיכרון נקי עדיף על "חכם אבל מבולגן"</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top:26px; width:100%; max-width:860px; background:rgba(34,211,238,0.07); border:1px solid rgba(34,211,238,0.25); border-radius:12px; padding:18px 24px; text-align:center;">
+      <p style="font-size:1.05rem; color:#e2e8f0; margin:0; line-height:1.6;">
+        💡 <strong style="color:var(--cyan);">השורה התחתונה:</strong> זיכרון הוא כוח — אבל בלי תחזוקה הוא הופך לרעש שמייקר את העלות ופוגע באיכות התשובות. שווה להפוך "היגיינת זיכרון" לשגרה.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 14: FINAL QUOTE                      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark" style="background: linear-gradient(135deg, #0a0014 0%, #0f0c29 60%, #0a0a14 100%);">
+    <div class="big-quote" style="font-size:1.65rem; max-width:760px;">
+      העתיד של agents לא תלוי רק בכמה הם <span class="accent-indigo">נשמעים אנושיים</span> —
+      אלא בכמה טוב הם יודעים <span class="accent">לזכור</span>, ולנהל את הזיכרון הזה עם
+      <span class="accent-cyan">policy חכמה</span>.
+    </div>
+    <div class="divider" style="margin-top:24px;"></div>
+    <p class="muted" style="font-size:0.9rem; margin-top:8px;">
+      אם פעם בנינו agents שיודעים לענות —<br>
+      היום אנחנו בונים agents שיודעים לזכור.<br>
+      השלב הבא: agents שיודעים גם <strong style="color:#e2e8f0;">מה לא לזכור</strong>.
+    </p>
+    <div class="logo-strip" style="margin-top:28px;">
+      <span class="logo-pill">🧠 Cognee</span>
+      <span class="logo-pill" style="color:#a5b4fc; border-color:rgba(165,180,252,0.3);">Amit Rosen</span>
+    </div>
+  </div>
+
+</div><!-- /presentation -->
+
+<!-- ─── NAVIGATION ────────────────────────────── -->
+<nav>
+  <button id="prevBtn" onclick="navigate(-1)" disabled>‹</button>
+  <span class="slide-counter" id="counter">1 / 13</span>
+  <button id="nextBtn" onclick="navigate(1)">›</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+
+  function navigate(dir) {
+    slides[current].classList.remove('active', 'fade-in');
+    slides[current].style.display = 'none';
+    current = Math.max(0, Math.min(slides.length - 1, current + dir));
+    slides[current].style.display = 'flex';
+    void slides[current].offsetWidth; // reflow
+    slides[current].classList.add('active', 'fade-in');
+    updateUI();
+  }
+
+  function updateUI() {
+    document.getElementById('counter').textContent = `${current + 1} / ${slides.length}`;
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === slides.length - 1;
+    const pct = ((current) / (slides.length - 1)) * 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   navigate(-1);
+  });
+
+  // Init first slide
+  slides[0].style.display = 'flex';
+  updateUI();
+</script>
+</body>
+</html>
