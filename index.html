@@ -822,7 +822,101 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  <!-- SLIDE 8: COGNEE                            -->
+  <!-- SLIDE 8: CLAUDE CODE MEMORY — HOW IT WORKS -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 3</div>
+    <h2>Memory — איך זה עובד ולמה זה מתחיל <span class="accent-red">לכאוב</span> אחרי כמה שבועות</h2>
+    <p class="muted" style="margin-bottom:22px; max-width:850px;">אם אתם עובדים עם Claude Code באופן שוטף, שווה להבין איך מנגנון ה-memory שלו בנוי — זה משפיע ישירות על ביצועים, עלות (tokens), ואפילו על "התנהגות מוזרה" של המודל.</p>
+
+    <div style="display:flex; gap:36px; max-width:1040px; width:100%; align-items:center;">
+      <!-- Left: illustration -->
+      <div style="flex:0.85; display:flex; justify-content:center;">
+        <img src="assets/claude_memory_tree.png" alt="הזיכרון של Claude Code" style="width:100%; max-width:420px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
+      </div>
+
+      <!-- Right: the three layers -->
+      <div style="flex:1.15; display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">📇</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">CLAUDE.md</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קובץ הוראות קבוע שאתה כותב (או שנוצר עם /init) — נטען במלואו בתחילת כל session</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">📄</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">MEMORY.md (אינדקס אוטומטי)</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קלוד כותב לבד מתוך תיקונים והעדפות. ~200 השורות הראשונות (עד 25KB) נטענות בכל session; כל שורה מפנה לקובץ מפורט</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">🗓️</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">קבצי נושא (topic files)</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קבצים כמו debugging.md שקלוד כותב וקורא לבד, רק כשצריך — לא נטענים אוטומטית</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-top:26px; width:100%; max-width:860px; background:rgba(34,211,238,0.07); border:1px solid rgba(34,211,238,0.25); border-radius:12px; padding:18px 24px; text-align:center;">
+      <p style="font-size:1.05rem; color:#e2e8f0; margin:0; line-height:1.6;">
+        💡 <strong style="color:var(--cyan);">השורה התחתונה:</strong> Memory זה כוח – אבל בלי תחזוקה הוא הופך לרעש שמבזבז tokens ופוגע באיכות התשובות.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 8: CLAUDE CODE MEMORY                -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="slide slide-dark">
+    <div class="part-badge">חלק 3</div>
+    <h2>Memory — איך זה עובד ולמה זה מתחיל <span class="accent-red">לכאוב</span> אחרי כמה שבועות</h2>
+    <p class="muted" style="margin-bottom:22px; max-width:850px;">אם אתם עובדים עם Claude Code באופן שוטף, שווה להבין איך מנגנון ה-memory שלו בנוי — זה משפיע ישירות על ביצועים, עלות (tokens), ואפילו על "התנהגות מוזרה" של המודל.</p>
+
+    <div style="display:flex; gap:36px; max-width:1040px; width:100%; align-items:center;">
+      <!-- Left: illustration -->
+      <div style="flex:0.85; display:flex; justify-content:center;">
+        <img src="assets/claude_memory_tree.png" alt="הזיכרון של Claude Code" style="width:100%; max-width:420px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
+      </div>
+
+      <!-- Right: the three layers -->
+      <div style="flex:1.15; display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">📇</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">CLAUDE.md</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קובץ הוראות קבוע שאתה כותב (או שנוצר עם /init) — נטען במלואו בתחילת כל session</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">📄</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">MEMORY.md (אינדקס אוטומטי)</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קלוד כותב לבד מתוך תיקונים והעדפות. ~200 השורות הראשונות (עד 25KB) נטענות בכל session; כל שורה מפנה לקובץ מפורט</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="font-size:1.7rem; line-height:1.1;">🗓️</div>
+          <div>
+            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">קבצי נושא (topic files)</h4>
+            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קבצים כמו debugging.md שקלוד כותב וקורא לבד, רק כשצריך — לא נטענים אוטומטית</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-top:26px; width:100%; max-width:860px; background:rgba(34,211,238,0.07); border:1px solid rgba(34,211,238,0.25); border-radius:12px; padding:18px 24px; text-align:center;">
+      <p style="font-size:1.05rem; color:#e2e8f0; margin:0; line-height:1.6;">
+        💡 <strong style="color:var(--cyan);">השורה התחתונה:</strong> Memory זה כוח – אבל בלי תחזוקה הוא הופך לרעש שמבזבז tokens ופוגע באיכות התשובות.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- SLIDE 9: COGNEE                            -->
   <!-- ══════════════════════════════════════════ -->
   <div class="slide slide-dark">
     <div class="part-badge">חלק 3 · מ-Markdown ל-Cognee</div>
@@ -890,7 +984,7 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  <!-- SLIDE 9: PART 4 – INSTITUTIONAL MEMORY     -->
+  <!-- SLIDE 10: PART 4 – INSTITUTIONAL MEMORY    -->
   <!-- ══════════════════════════════════════════ -->
   <div class="slide slide-dark">
     <div class="part-badge">חלק 4</div>
@@ -937,7 +1031,7 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  <!-- SLIDE 10.5: HERMES CASE STUDY              -->
+  <!-- SLIDE 11: HERMES CASE STUDY                -->
   <!-- ══════════════════════════════════════════ -->
   <div class="slide slide-dark">
     <div class="part-badge">Case Study</div>
@@ -975,7 +1069,7 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  <!-- SLIDE 10: MEMORY LAYERS                    -->
+  <!-- SLIDE 12: MEMORY LAYERS                    -->
   <!-- ══════════════════════════════════════════ -->
   <div class="slide slide-dark">
     <div class="part-badge">חלק 4 · שכבות הזיכרון</div>
@@ -1218,7 +1312,7 @@
 <!-- ─── NAVIGATION ────────────────────────────── -->
 <nav>
   <button id="prevBtn" onclick="navigate(-1)" disabled>‹</button>
-  <span class="slide-counter" id="counter">1 / 13</span>
+  <span class="slide-counter" id="counter">1 / 12</span>
   <button id="nextBtn" onclick="navigate(1)">›</button>
 </nav>
 
