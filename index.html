@@ -869,53 +869,6 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  <!-- SLIDE 8: CLAUDE CODE MEMORY                -->
-  <!-- ══════════════════════════════════════════ -->
-  <div class="slide slide-dark">
-    <div class="part-badge">חלק 3</div>
-    <h2>Memory — איך זה עובד ולמה זה מתחיל <span class="accent-red">לכאוב</span> אחרי כמה שבועות</h2>
-    <p class="muted" style="margin-bottom:22px; max-width:850px;">אם אתם עובדים עם Claude Code באופן שוטף, שווה להבין איך מנגנון ה-memory שלו בנוי — זה משפיע ישירות על ביצועים, עלות (tokens), ואפילו על "התנהגות מוזרה" של המודל.</p>
-
-    <div style="display:flex; gap:36px; max-width:1040px; width:100%; align-items:center;">
-      <!-- Left: illustration -->
-      <div style="flex:0.85; display:flex; justify-content:center;">
-        <img src="assets/claude_memory_tree.png" alt="הזיכרון של Claude Code" style="width:100%; max-width:420px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
-      </div>
-
-      <!-- Right: the three layers -->
-      <div style="flex:1.15; display:flex; flex-direction:column; gap:18px;">
-        <div style="display:flex; gap:14px; align-items:flex-start;">
-          <div style="font-size:1.7rem; line-height:1.1;">📇</div>
-          <div>
-            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">CLAUDE.md</h4>
-            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קובץ הוראות קבוע שאתה כותב (או שנוצר עם /init) — נטען במלואו בתחילת כל session</p>
-          </div>
-        </div>
-        <div style="display:flex; gap:14px; align-items:flex-start;">
-          <div style="font-size:1.7rem; line-height:1.1;">📄</div>
-          <div>
-            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">MEMORY.md (אינדקס אוטומטי)</h4>
-            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קלוד כותב לבד מתוך תיקונים והעדפות. ~200 השורות הראשונות (עד 25KB) נטענות בכל session; כל שורה מפנה לקובץ מפורט</p>
-          </div>
-        </div>
-        <div style="display:flex; gap:14px; align-items:flex-start;">
-          <div style="font-size:1.7rem; line-height:1.1;">🗓️</div>
-          <div>
-            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">קבצי נושא (topic files)</h4>
-            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">קבצים כמו debugging.md שקלוד כותב וקורא לבד, רק כשצריך — לא נטענים אוטומטית</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div style="margin-top:26px; width:100%; max-width:860px; background:rgba(34,211,238,0.07); border:1px solid rgba(34,211,238,0.25); border-radius:12px; padding:18px 24px; text-align:center;">
-      <p style="font-size:1.05rem; color:#e2e8f0; margin:0; line-height:1.6;">
-        💡 <strong style="color:var(--cyan);">השורה התחתונה:</strong> Memory זה כוח – אבל בלי תחזוקה הוא הופך לרעש שמבזבז tokens ופוגע באיכות התשובות.
-      </p>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════ -->
   <!-- SLIDE 9: COGNEE                            -->
   <!-- ══════════════════════════════════════════ -->
   <div class="slide slide-dark">
@@ -1201,93 +1154,7 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
-  <!-- BONUS A: CLAUDE CODE MEMORY — HOW IT WORKS -->
-  <!-- ══════════════════════════════════════════ -->
-  <div class="slide slide-dark">
-    <div class="part-badge">בונוס · Claude Code</div>
-    <h2>איך עובד ה<span class="accent">זיכרון</span> של Claude Code</h2>
-    <p class="muted" style="margin-bottom:22px; max-width:720px;">קלוד בונה לעצמו אוטומטית שלוש שכבות זיכרון. כדאי להכיר אותן — הן משפיעות ישירות על איכות התשובות ועל העלות.</p>
-
-    <div style="display:flex; gap:36px; max-width:1040px; width:100%; align-items:center;">
-      <!-- Left: illustration (drops in assets/claude_memory.png if present, else layered fallback) -->
-      <div style="flex:0.85; display:flex; justify-content:center;">
-        <img src="https://amitro123.github.io/ai-vision-workshop/assets/claude_memory.png" alt="הזיכרון של Claude Code" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" style="width:100%; max-width:420px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1);">
-        <div style="display:none; flex-direction:column; gap:14px; width:100%; max-width:380px;">
-          <div style="background:linear-gradient(135deg,#312e81,#1e1b4b); border:1px solid rgba(165,180,252,0.4); border-radius:14px; padding:16px 18px; box-shadow:0 10px 26px rgba(0,0,0,0.45);">
-            <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:1.6rem;">📇</span><strong style="color:#e2e8f0;">אינדקס ראשי</strong></div>
-            <div style="font-size:0.68rem; color:#a5b4fc; direction:ltr; text-align:left; margin-top:10px; font-family:'Consolas',monospace; line-height:1.6;">→ debugging-guidelines<br>→ project-context<br>→ user-preferences</div>
-          </div>
-          <div style="background:rgba(30,41,59,0.9); border:1px solid rgba(34,211,238,0.35); border-radius:14px; padding:16px 18px; box-shadow:0 8px 22px rgba(0,0,0,0.4); margin-right:22px;">
-            <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:1.6rem;">📄</span><strong style="color:#e2e8f0;">קבצי זיכרון</strong></div>
-            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">מסמכים נפרדים לפי נושא — נקראים לפי צורך</div>
-          </div>
-          <div style="background:rgba(30,41,59,0.9); border:1px solid rgba(167,139,250,0.35); border-radius:14px; padding:16px 18px; box-shadow:0 8px 22px rgba(0,0,0,0.4); margin-right:44px;">
-            <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:1.6rem;">🗓️</span><strong style="color:#e2e8f0;">יומני שיחות</strong></div>
-            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">סיכום כרונולוגי של כל שיחה</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: the three layers -->
-      <div style="flex:1.15; display:flex; flex-direction:column; gap:18px;">
-        <div style="display:flex; gap:14px; align-items:flex-start;">
-          <div style="font-size:1.7rem; line-height:1.1;">📇</div>
-          <div>
-            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">אינדקס ראשי</h4>
-            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">תוכן העניינים של הזיכרון. השורות הראשונות נטענות בתחילת כל שיחה, וכל שורה מפנה לקובץ מפורט.</p>
-          </div>
-        </div>
-        <div style="display:flex; gap:14px; align-items:flex-start;">
-          <div style="font-size:1.7rem; line-height:1.1;">📄</div>
-          <div>
-            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">קבצי זיכרון</h4>
-            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">מסמכים נפרדים לפי נושא (למשל "כללי דיבוג"). קלוד קורא אותם רק כשהוא צריך אותם — או כשמבקשים ממנו.</p>
-          </div>
-        </div>
-        <div style="display:flex; gap:14px; align-items:flex-start;">
-          <div style="font-size:1.7rem; line-height:1.1;">🗓️</div>
-          <div>
-            <h4 style="font-size:1.05rem; font-weight:700; margin-bottom:4px; color:#e2e8f0;">יומני שיחות</h4>
-            <p style="font-size:0.92rem; color:var(--text-muted); line-height:1.55; margin:0;">סיכום של כל שיחה לפי סדר כרונולוגי. האחרונים נטענים אוטומטית כדי לשמור על רצף בין פעם לפעם.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════ -->
-  <!-- BONUS B: CLAUDE CODE MEMORY — WHY IT HURTS -->
-  <!-- ══════════════════════════════════════════ -->
-  <div class="slide slide-dark">
-    <div class="part-badge">בונוס · Claude Code</div>
-    <h2>למה זה מתחיל <span class="accent-red">לכאוב</span> — ו"היגיינת זיכרון"</h2>
-    <div class="compare" style="grid-template-columns: 1fr 1fr; margin-top:12px; align-items:stretch;">
-      <div class="compare-box left">
-        <h4>⚠️ מה קורה אחרי כמה שבועות</h4>
-        <p>מצטברים עשרות ומאות קבצי זיכרון, ואיתם כפילויות וסתירות. קלוד מתחיל "להתבלבל" — קופץ בין גרסאות, נכנס ללולאות, ומקבל החלטות לא עקביות.
-        <br><br>
-        דוגמה: אותה הנחיה נשמרה בכמה קבצים שונים → קלוד מתנדנד ביניהם. וכל הרעש הזה גם מבזבז משאבי עיבוד (עלות).</p>
-      </div>
-      <div class="compare-box right">
-        <h4>🧹 היגיינת זיכרון — מה עושים</h4>
-        <ul style="text-align:right; padding:0; margin:0; list-style:none; font-size:0.9rem; color:var(--text-muted); line-height:1.75;">
-          <li>◆ אחת לתקופה — לבקש מקלוד למפות את כל הזיכרון ולהציע איחוד וניקוי</li>
-          <li>◆ לאחד קבצים כפולים ולשמור מקור אמת אחד</li>
-          <li>◆ להשתמש בפקודת <span style="direction:ltr; color:#a5b4fc;">/memory</span> כדי לראות מה קיים בפועל</li>
-          <li>◆ לזכור שגם קבצי פרויקט מוסיפים "רעש"</li>
-          <li>◆ לא לפחד למחוק — זיכרון נקי עדיף על "חכם אבל מבולגן"</li>
-        </ul>
-      </div>
-    </div>
-    <div style="margin-top:26px; width:100%; max-width:860px; background:rgba(34,211,238,0.07); border:1px solid rgba(34,211,238,0.25); border-radius:12px; padding:18px 24px; text-align:center;">
-      <p style="font-size:1.05rem; color:#e2e8f0; margin:0; line-height:1.6;">
-        💡 <strong style="color:var(--cyan);">השורה התחתונה:</strong> זיכרון הוא כוח — אבל בלי תחזוקה הוא הופך לרעש שמייקר את העלות ופוגע באיכות התשובות. שווה להפוך "היגיינת זיכרון" לשגרה.
-      </p>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════ -->
-  <!-- SLIDE 14: FINAL QUOTE                      -->
+  <!-- SLIDE 13: FINAL QUOTE                      -->
   <!-- ══════════════════════════════════════════ -->
   <div class="slide slide-dark" style="background: linear-gradient(135deg, #0a0014 0%, #0f0c29 60%, #0a0a14 100%);">
     <div class="big-quote" style="font-size:1.65rem; max-width:760px;">
